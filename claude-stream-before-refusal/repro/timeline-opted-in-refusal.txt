@@ -1,0 +1,27 @@
+    362 ms  agent:lifecycle  start 
+    445 ms  agent:lifecycle  model 
+   1057 ms  provider         content_block_delta thinking_delta  'The user wants to see whether the reply'
+   1059 ms  agent:thinking   item=2b012d25-3e37-49f7-b79d-3e1c556407dc replace=None delta='The user wants to see whether the reply' text='The user wants to see whether the reply'
+   1658 ms  provider         content_block_delta thinking_delta  ' streams; think briefly, then answer in '
+   1658 ms  provider         content_block_delta signature_delta  ''
+   1662 ms  agent:thinking   item=2b012d25-3e37-49f7-b79d-3e1c556407dc replace=None delta=' streams; think briefly, then answer in ' text='The user wants to see whether the reply streams; t'
+   2259 ms  provider         content_block_delta text_delta  'REFUSED_PARTIAL_MARKER This text was gen'
+   2262 ms  agent:assistant  item=ffac1d5d-83a9-4580-8d0c-5ebd6212e10b:1 replace=None delta='REFUSED_PARTIAL_MARKER This text was gen' text='REFUSED_PARTIAL_MARKER This text was generated'
+   2262 ms  chat:delta       text='REFUSED_PARTIAL_MARKER This text was generated' errorKind=None 
+   2860 ms  provider         content_block_delta text_delta  ' before the classifier stopped the'
+   2864 ms  agent:assistant  item=ffac1d5d-83a9-4580-8d0c-5ebd6212e10b:1 replace=None delta=' before the classifier stopped the' text=''
+   2864 ms  chat:delta       text='' errorKind=None 
+   3461 ms  provider         content_block_delta text_delta  ' reply and must not stay'
+   3465 ms  agent:assistant  item=ffac1d5d-83a9-4580-8d0c-5ebd6212e10b:1 replace=None delta=' reply and must not stay' text=''
+   3465 ms  chat:delta       text='' errorKind=None 
+   4062 ms  provider         content_block_delta text_delta  ' on screen.'
+   4065 ms  agent:assistant  item=ffac1d5d-83a9-4580-8d0c-5ebd6212e10b:1 replace=None delta=' on screen.' text=''
+   4065 ms  chat:delta       text='' errorKind=None 
+   4663 ms  provider         message_delta  refusal ''
+   4663 ms  provider         message_stop   ''
+   4668 ms  agent:assistant  item=ffac1d5d-83a9-4580-8d0c-5ebd6212e10b:1 replace=True delta='' text=''
+   4668 ms  chat:delta       text='' errorKind=None 
+   4699 ms  agent:lifecycle  finishing The provider refused this request (category: cyber). Revise 
+   4699 ms  agent:lifecycle  model 
+   4699 ms  agent:lifecycle  error The provider refused this request (category: cyber). Revise 
+   4737 ms  chat:error       text='' errorKind=None The provider refused this request (category: cyber

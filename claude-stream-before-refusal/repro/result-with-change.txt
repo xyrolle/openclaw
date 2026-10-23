@@ -1,0 +1,44 @@
+control   answer        wait=ok req=1 toolres=0 provider first/last/end=4671/9482/10083 client n/first/last=9/4674/9488
+           terminal={'state': 'final', 'messageText': '{"role":"assistant","content":[{"type":"text","text":"Streaming check: this reply is sent in six pieces, one every few hundred milliseconds, so a live view should grow while the model is still writing'}
+           withdrawals=[] history refused/call1/call2=False/False/False files=[]
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+main      answer        wait=ok req=1 toolres=0 provider first/last/end=1922/6737/7337 client n/first/last=3/7351/7351
+           terminal={'state': 'final', 'messageText': '{"role":"assistant","content":[{"type":"text","text":"Streaming check: this reply is sent in six pieces, one every few hundred milliseconds, so a live view should grow while the model is still writing'}
+           withdrawals=[] history refused/call1/call2=False/False/False files=[]
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+main      refusal       wait=error req=1 toolres=0 provider first/last/end=931/3963/4564 client n/first/last=0/None/None
+           terminal={'state': 'error', 'errorMessage': 'The provider refused this request (category: cyber). Revise the request and try again.', 'messageText': 'null'}
+           withdrawals=[] history refused/call1/call2=False/False/False files=[]
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+main      cut           wait=error req=7 toolres=0 provider first/last/end=830/80490/3234 client n/first/last=0/None/None
+           terminal={'state': 'error', 'errorKind': 'timeout', 'errorMessage': 'LLM request timed out.', 'messageText': 'null'}
+           withdrawals=[{'ms': 4421, 'text': ''}, {'ms': 10392, 'text': ''}, {'ms': 16517, 'text': ''}, {'ms': 24334, 'text': ''}] history refused/call1/call2=False/False/False files=[]
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+main      tool-refusal  wait=error req=1 toolres=0 provider first/last/end=851/3255/3856 client n/first/last=0/None/None
+           terminal={'state': 'error', 'errorMessage': 'The provider refused this request (category: cyber). Revise the request and try again.', 'messageText': 'null'}
+           withdrawals=[] history refused/call1/call2=False/False/False files=[]
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+main      two-calls     wait=error req=2 toolres=1 provider first/last/end=875/6391/6992 client n/first/last=2/4490/4490
+           terminal={'state': 'error', 'errorMessage': 'The provider refused this request (category: cyber). Revise the request and try again.', 'messageText': 'null'}
+           withdrawals=[] history refused/call1/call2=False/True/False files=['workspace/main/CALL_ONE_TOOL_EXECUTED.txt']
+           toolResults=[{'toolCallId': 'toolu_call_one_write', 'isError': False}] toolEvents=['4515ms start write toolu_call_one_write', '4569ms result write toolu_call_one_write'] thinkingWithdrawals=[]
+streamed  answer        wait=ok req=1 toolres=0 provider first/last/end=1179/5984/6585 client n/first/last=9/1181/5988
+           terminal={'state': 'final', 'messageText': '{"role":"assistant","content":[{"type":"text","text":"Streaming check: this reply is sent in six pieces, one every few hundred milliseconds, so a live view should grow while the model is still writing'}
+           withdrawals=[] history refused/call1/call2=False/False/False files=['workspace/main/CALL_ONE_TOOL_EXECUTED.txt']
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+streamed  refusal       wait=error req=1 toolres=0 provider first/last/end=1057/4062/4663 client n/first/last=6/1059/4065
+           terminal={'state': 'error', 'errorMessage': 'The provider refused this request (category: cyber). Revise the request and try again.', 'messageText': 'null'}
+           withdrawals=[{'ms': 4668, 'text': ''}] history refused/call1/call2=False/False/False files=['workspace/main/CALL_ONE_TOOL_EXECUTED.txt']
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+streamed  cut           wait=error req=7 toolres=0 provider first/last/end=921/71702/3334 client n/first/last=28/926/71706
+           terminal={'state': 'error', 'errorKind': 'timeout', 'errorMessage': 'LLM request timed out.', 'messageText': 'null'}
+           withdrawals=[{'ms': 3340, 'text': ''}, {'ms': 3965, 'text': ''}, {'ms': 7056, 'text': ''}, {'ms': 9640, 'text': ''}] history refused/call1/call2=False/False/False files=['workspace/main/CALL_ONE_TOOL_EXECUTED.txt']
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+streamed  tool-refusal  wait=error req=1 toolres=0 provider first/last/end=1652/4053/4654 client n/first/last=2/1654/2258
+           terminal={'state': 'error', 'errorMessage': 'The provider refused this request (category: cyber). Revise the request and try again.', 'messageText': 'null'}
+           withdrawals=[{'ms': 4660, 'text': ''}] history refused/call1/call2=False/False/False files=['workspace/main/CALL_ONE_TOOL_EXECUTED.txt']
+           toolResults=[] toolEvents=[] thinkingWithdrawals=[]
+streamed  two-calls     wait=error req=2 toolres=1 provider first/last/end=1054/6544/7145 client n/first/last=6/1056/6547
+           terminal={'state': 'error', 'errorMessage': 'The provider refused this request (category: cyber). Revise the request and try again.', 'messageText': 'null'}
+           withdrawals=[{'ms': 7151, 'text': ''}] history refused/call1/call2=False/True/False files=['workspace/streamed/CALL_ONE_TOOL_EXECUTED.txt', 'workspace/main/CALL_ONE_TOOL_EXECUTED.txt']
+           toolResults=[{'toolCallId': 'toolu_call_one_write', 'isError': False}] toolEvents=['4680ms start write toolu_call_one_write', '4718ms result write toolu_call_one_write'] thinkingWithdrawals=[]

@@ -1,0 +1,24 @@
+   1067 ms  agent:lifecycle  start 
+   1740 ms  provider         content_block_delta thinking_delta  'The user wants to see whether'
+   2341 ms  provider         content_block_delta thinking_delta  ' the reply streams; think briefly, then'
+   2944 ms  provider         content_block_delta thinking_delta  ' answer in several pieces.'
+   2944 ms  provider         content_block_delta signature_delta  ''
+   3546 ms  provider         content_block_delta text_delta  'Streaming check: this reply is'
+   4403 ms  provider         content_block_delta text_delta  ' sent in six pieces, one'
+   5004 ms  provider         content_block_delta text_delta  ' every few hundred milliseconds, so'
+   5605 ms  provider         content_block_delta text_delta  ' a live view should grow'
+   6206 ms  provider         content_block_delta text_delta  ' while the model is still'
+   6806 ms  provider         content_block_delta text_delta  ' writing.'
+   7412 ms  provider         message_delta  end_turn ''
+   7412 ms  provider         message_stop   ''
+   7426 ms  agent:lifecycle  model 
+   7426 ms  agent:thinking   item=fb0b780a-a376-47c1-af86-ec04c5985c29 replace=None delta='The user wants to see whether the reply ' text='The user wants to see whether the reply streams; t'
+   7426 ms  agent:assistant  item=f8a9cf16-75f9-4f59-8cdb-feef7b846702:1 replace=None delta='Streaming check: this reply is' text='Streaming check: this reply is'
+   7426 ms  chat:delta       text='Streaming check: this reply is' errorKind=None 
+   7426 ms  agent:assistant  item=f8a9cf16-75f9-4f59-8cdb-feef7b846702:1 replace=None delta=' sent in six pieces, one every few hundr' text=''
+   7465 ms  agent:thinking   item=fb0b780a-a376-47c1-af86-ec04c5985c29 replace=None delta='' text=''
+   7465 ms  chat:delta       text='' errorKind=None 
+   7465 ms  agent:lifecycle  finishing 
+   7465 ms  agent:lifecycle  model 
+   7465 ms  agent:lifecycle  end 
+   7465 ms  chat:final       text='Streaming check: this reply is sent in six pieces, one every' errorKind=None 

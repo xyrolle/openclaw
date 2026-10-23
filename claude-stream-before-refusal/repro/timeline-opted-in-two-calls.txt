@@ -1,0 +1,35 @@
+    366 ms  agent:lifecycle  start 
+    454 ms  agent:lifecycle  model 
+   1054 ms  provider         content_block_delta text_delta  'CALL_ONE_MARKER Step one'
+   1056 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:1 replace=None delta='CALL_ONE_MARKER Step one' text='CALL_ONE_MARKER Step one'
+   1056 ms  chat:delta       text='CALL_ONE_MARKER Step one' errorKind=None 
+   1654 ms  provider         content_block_delta text_delta  ' is done; writing'
+   1656 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:1 replace=None delta=' is done; writing' text=''
+   1656 ms  chat:delta       text='' errorKind=None 
+   2255 ms  provider         content_block_delta text_delta  ' the first file.'
+   2259 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:1 replace=None delta=' the first file.' text=''
+   2259 ms  chat:delta       text='' errorKind=None 
+   2855 ms  provider         content_block_delta input_json_delta  '{"path":"CALL_ONE_TOO'
+   3457 ms  provider         content_block_delta input_json_delta  'L_EXECUTED.txt","cont'
+   4058 ms  provider         content_block_delta input_json_delta  'ent":"call one ran"}'
+   4658 ms  provider         message_delta  tool_use ''
+   4658 ms  provider         message_stop   ''
+   4680 ms  chat:delta       text='' errorKind=None 
+   4743 ms  agent:lifecycle  model 
+   5343 ms  provider         content_block_delta text_delta  'CALL_TWO_PARTIAL_MARKER Step two'
+   5347 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:2 replace=None delta='CALL_TWO_PARTIAL_MARKER Step two' text='CALL_TWO_PARTIAL_MARKER Step two'
+   5347 ms  chat:delta       text='CALL_TWO_PARTIAL_MARKER Step two' errorKind=None 
+   5944 ms  provider         content_block_delta text_delta  ' started, then the'
+   5947 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:2 replace=None delta=' started, then the' text=''
+   5947 ms  chat:delta       text='' errorKind=None 
+   6544 ms  provider         content_block_delta text_delta  ' classifier stopped it.'
+   6547 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:2 replace=None delta=' classifier stopped it.' text=''
+   6547 ms  chat:delta       text='' errorKind=None 
+   7145 ms  provider         message_delta  refusal ''
+   7145 ms  provider         message_stop   ''
+   7151 ms  agent:assistant  item=7bd9c5de-3450-470d-82a0-2a7ff197d670:2 replace=True delta='' text=''
+   7151 ms  chat:delta       text='' errorKind=None 
+   7176 ms  agent:lifecycle  finishing The provider refused this request (category: cyber). Revise 
+   7176 ms  agent:lifecycle  model 
+   7176 ms  agent:lifecycle  error The provider refused this request (category: cyber). Revise 
+   7207 ms  chat:error       text='' errorKind=None The provider refused this request (category: cyber
