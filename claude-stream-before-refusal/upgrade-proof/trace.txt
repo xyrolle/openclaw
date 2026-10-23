@@ -1,0 +1,162 @@
+## 1. Released 2026.10.6 writes sessions and transcripts on a custom Claude 5 route (no flag)
+
+$ openclaw --version
+OpenClaw 2026.10.6 (fe06181)
+
+$ openclaw config validate
+Config valid: ~/.openclaw/openclaw.json
+
+$ openclaw gateway run --port 18931 --bind loopback   # 2026.10.6, in the background
+Gateway listening on 127.0.0.1:18931
+
+$ openclaw gateway call chat.send --params '{"sessionKey":"agent:main:saved-answer","message":"[scenario:answer] Saved before the upgrade.",...}'
+$ openclaw gateway call agent.wait --params '{"runId":"<run>"}'
+status: ok
+
+$ openclaw gateway call chat.send --params '{"sessionKey":"agent:main:saved-two-calls","message":"[scenario:two-calls] Write a file, then continue.",...}'
+$ openclaw gateway call agent.wait --params '{"runId":"<run>"}'
+status: error
+
+$ openclaw gateway call chat.history ... | digest   # per saved session
+saved-answer:    2 messages, sha256 17f38a5e8538ef13
+saved-two-calls: 5 messages, sha256 3621ba16c7a0e78e
+
+$ kill -TERM <gateway pid>
+Gateway stopped
+
+$ python3 transcript-digest.py <state>/agents/main/agent/openclaw-agent.sqlite record   # stored transcript rows
+session 54c6622e: first 9 rows sha256 8ff0f934aaaea8bb
+session 615a5a3e: first 6 rows sha256 f6db8427365b9d3b
+
+## 2. PR head on the same state dir, config unchanged
+
+$ openclaw --version
+OpenClaw 2026.10.6 (0a06243)
+
+$ openclaw config validate
+Config valid: ~/.openclaw/openclaw.json
+
+$ openclaw doctor --fix --non-interactive   # the documented upgrade step
+exit 0   (full output in doctor.log; migration lines:)
+Doctor: schema admission
+Doctor: database migrations
+Saved pre-migration SQLite backup: <state>/agents/main/agent/openclaw-agent.sqlite.pre-startup-migration-<id>.bak
+Saved pre-migration SQLite backup: <state>/state/openclaw.sqlite.pre-startup-migration-<id>.bak
+Doctor: heartbeat migration backups
+Reused pre-migration SQLite backup: <state>/agents/main/agent/openclaw-agent.sqlite.pre-startup-migration-<id>.bak
+Reused pre-migration SQLite backup: <state>/state/openclaw.sqlite.pre-startup-migration-<id>.bak
+Doctor: state schema
+Doctor: state migrations import
+Doctor: state dir migrations
+Doctor: legacy config migration
+│  - Stored session state heads in their composite primary-key tree (v26)  │
+
+$ openclaw gateway run --port 18931 --bind loopback   # PR head, in the background
+Gateway listening on 127.0.0.1:18931
+
+$ openclaw gateway call chat.history ... | digest   # same saved sessions, read by the PR head
+saved-answer:    2 messages, sha256 17f38a5e8538ef13   identical
+saved-two-calls: 4 messages, sha256 3470bad161f2c424   CHANGED
+
+chat.history of saved-two-calls as each version renders it:
+  2026.10.6:
+    user  "[scenario:two-calls] Write a file, then continue."
+    assistant  [{"type": "text", "text": "CALL_ONE_MARKER Step one is done; writing t
+    assistant toolUse [{"type": "toolCall", "id": "toolu_call_one_write", "name": "write", "
+    toolResult  [{"type": "text", "text": "Successfully wrote 12 bytes to CALL_ONE_TOO
+    assistant error [{"type": "text", "text": "The provider refused this request (category
+  PR head:
+    user  "[scenario:two-calls] Write a file, then continue."
+    assistant  [{"type": "text", "text": "CALL_ONE_MARKER Step one is done; writing t
+    assistant toolUse [{"type": "toolCall", "id": "toolu_call_one_write", "name": "write", "
+    toolResult  [{"type": "text", "text": "Successfully wrote 12 bytes to CALL_ONE_TOO
+
+session agent:main:saved-answer · run ok
+  1428 ms  provider thinking_delta "The user wants to see whether"
+  2029 ms  provider thinking_delta " the reply streams; think briefl"
+  2630 ms  provider thinking_delta " answer in several pieces."
+  3231 ms  provider text_delta "Streaming check: this reply is"
+  3832 ms  provider text_delta " sent in six pieces, one"
+  4432 ms  provider text_delta " every few hundred milliseconds,"
+  5033 ms  provider text_delta " a live view should grow"
+  5634 ms  provider text_delta " while the model is still"
+  6235 ms  provider text_delta " writing."
+  6836 ms  provider stop_reason=end_turn
+  6862 ms  client   thinking "The user wants to see whether th"
+  6862 ms  client   assistant "Streaming check: this reply is"
+  6862 ms  client   assistant " sent in six pieces, one every f"
+  6919 ms  client   chat final
+history: 4 messages; last assistant [{"type":"thinking","thinking":"The user wants to see whether the reply streams; think briefly, then answer in several p
+
+$ kill -TERM <gateway pid>
+Gateway stopped
+
+$ python3 transcript-digest.py <state>/agents/main/agent/openclaw-agent.sqlite compare   # stored transcript rows
+session 54c6622e: first 9 rows sha256 8ff0f934aaaea8bb identical (9 rows now)
+session 615a5a3e: first 6 rows sha256 f6db8427365b9d3b identical (10 rows now)
+
+## 3. Opt the same route in
+
+$ (add compat.streamBeforeRefusal: true to models.providers.claude-proxy.models[0])
+-            "maxTokens": 4096
++            "maxTokens": 4096,
++            "compat": {
++              "streamBeforeRefusal": true
++            }
+
+$ openclaw config validate
+Config valid: ~/.openclaw/openclaw.json
+
+$ openclaw gateway run --port 18931 --bind loopback   # PR head, in the background
+Gateway listening on 127.0.0.1:18931
+
+session agent:main:saved-answer · run ok
+  1530 ms  provider thinking_delta "The user wants to see whether"
+  1531 ms  client   thinking "The user wants to see whether"
+  2130 ms  provider thinking_delta " the reply streams; think briefl"
+  2134 ms  client   thinking " the reply streams; think briefl"
+  2732 ms  provider thinking_delta " answer in several pieces."
+  2734 ms  client   thinking " answer in several pieces."
+  3333 ms  provider text_delta "Streaming check: this reply is"
+  3338 ms  client   assistant "Streaming check: this reply is"
+  3934 ms  provider text_delta " sent in six pieces, one"
+  3937 ms  client   assistant " sent in six pieces, one"
+  4535 ms  provider text_delta " every few hundred milliseconds,"
+  4538 ms  client   assistant " every few hundred milliseconds,"
+  5136 ms  provider text_delta " a live view should grow"
+  5138 ms  client   assistant " a live view should grow"
+  5737 ms  provider text_delta " while the model is still"
+  5739 ms  client   assistant " while the model is still"
+  6339 ms  provider text_delta " writing."
+  6342 ms  client   assistant " writing."
+  6940 ms  provider stop_reason=end_turn
+  7007 ms  client   chat final
+history: 6 messages; last assistant [{"type":"thinking","thinking":"The user wants to see whether the reply streams; think briefly, then answer in several p
+
+session agent:main:after-upgrade-refusal · run error
+   900 ms  provider thinking_delta "The user wants to see whether th"
+   900 ms  client   thinking "The user wants to see whether th"
+  1501 ms  provider thinking_delta " streams; think briefly, then an"
+  1504 ms  client   thinking " streams; think briefly, then an"
+  2102 ms  provider text_delta "REFUSED_PARTIAL_MARKER This text"
+  2104 ms  client   assistant "REFUSED_PARTIAL_MARKER This text"
+  2703 ms  provider text_delta " before the classifier stopped t"
+  2705 ms  client   assistant " before the classifier stopped t"
+  3304 ms  provider text_delta " reply and must not stay"
+  3306 ms  client   assistant " reply and must not stay"
+  3905 ms  provider text_delta " on screen."
+  3906 ms  client   assistant " on screen."
+  4506 ms  provider stop_reason=refusal
+  4514 ms  client   assistant replace ""
+  4590 ms  client   chat error
+history: 2 messages; last custom "Your request couldn't be completed: The provider refused this request (category: cyber). Revise the request and try aga
+
+$ openclaw gateway call chat.history ... | digest   # earlier transcripts after the opt-in
+saved-two-calls: 4 messages, sha256 3470bad161f2c424   CHANGED
+
+$ kill -TERM <gateway pid>
+Gateway stopped
+
+$ python3 transcript-digest.py <state>/agents/main/agent/openclaw-agent.sqlite compare   # stored transcript rows
+session 54c6622e: first 9 rows sha256 8ff0f934aaaea8bb identical (9 rows now)
+session 615a5a3e: first 6 rows sha256 f6db8427365b9d3b identical (13 rows now)
