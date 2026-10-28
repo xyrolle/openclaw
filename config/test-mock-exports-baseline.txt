@@ -2193,7 +2193,6 @@
 ["src/agents/tools/web-guarded-fetch.test.ts","../../infra/net/fetch-guard.js","d9c88a148c68aaddef8e87ca9e8389367686f8ab5b6c48107701b600f5bd82fa",1]
 ["src/agents/tools/web-search.late-bind.test.ts","../../secrets/runtime-state.js","99698e86d03a92d4df23811a1e3ef8bf479674c80ca2a82aff678b63d6ef7488",1]
 ["src/agents/tools/web-search.late-bind.test.ts","../../secrets/runtime-web-tools-state.js","b4aa57f35d3b7468331f2144a3b687e8057c7d29b46ff7c3b12d8d73517ecbd1",1]
-["src/agents/tools/web-search.late-bind.test.ts","../../web-search/runtime.js","27a0f8130aa0bb08dfdd95aae2255fe681db9fc8fcb0fed7faef018623ffb038",1]
 ["src/agents/tools/web-search.provider-errors.test.ts","./web-guarded-fetch.js","abb45b5b36c3d1fc07fd1168c447852db477f54965a59c7e61050dd6255976bd",1]
 ["src/agents/tools/web-search.redirect.test.ts","./web-guarded-fetch.js","7b776bd20696f351915d80d6d4768d62c7a014c3cc6785ca6e97c4ee178027bb",1]
 ["src/agents/tools/web-tool-runtime-context.test.ts","../../plugins/plugin-registry.js","3e23f0df08f1b2f5069d931eaab8208ad93b1ab58ebc2db369b42ac26a485d73",1]

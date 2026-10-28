@@ -1,5 +1,7 @@
 import { Value } from "typebox/value";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { createEmptyPluginRegistry } from "../../plugins/registry-empty.js";
+import { setActivePluginRegistry } from "../../plugins/runtime.js";
 import { normalizeWebSearchOutput, WebSearchOutputSchema } from "./web-search-output.js";
 import {
   buildUnsupportedSearchFilterResponse,
@@ -20,6 +22,67 @@ describe("web_search tool schema", () => {
     expect(tool?.resultContentSource).toBe("network");
 
     expect(tool?.outputSchema).toBe(WebSearchOutputSchema);
+  });
+});
+
+describe("web_search schema of the selected provider", () => {
+  afterEach(() => {
+    setActivePluginRegistry(createEmptyPluginRegistry());
+  });
+
+  const queryOnlyParameters = {
+    type: "object",
+    required: ["query"],
+    properties: { query: { type: "string" } },
+  };
+
+  function registerQueryOnlyProvider(): void {
+    const registry = createEmptyPluginRegistry();
+    registry.webSearchProviders.push({
+      pluginId: "query-only-search",
+      source: "test",
+      provider: {
+        id: "query-only",
+        label: "Query-only Search",
+        hint: "Search",
+        envVars: [],
+        placeholder: "",
+        signupUrl: "",
+        credentialPath: "",
+        getCredentialValue: () => undefined,
+        setCredentialValue: () => {},
+        createTool: () => ({
+          description: "Search the web with a query only.",
+          parameters: queryOnlyParameters,
+          execute: async () => ({}),
+        }),
+      },
+    });
+    setActivePluginRegistry(registry);
+  }
+
+  it("offers the explicitly selected provider's parameters and description", () => {
+    registerQueryOnlyProvider();
+
+    const tool = createWebSearchTool({
+      config: { tools: { web: { search: { provider: "query-only" } } } },
+    });
+
+    expect(tool?.parameters).toBe(queryOnlyParameters);
+    expect(tool?.description).toBe("Search the web with a query only.");
+  });
+
+  it("keeps the shared schema without an explicit selection of a registered provider", () => {
+    const shared = createWebSearchTool();
+    registerQueryOnlyProvider();
+
+    for (const tool of [
+      createWebSearchTool(),
+      createWebSearchTool({ config: { tools: { web: { search: { provider: "unregistered" } } } } }),
+    ]) {
+      expect(tool?.parameters).toBe(shared?.parameters);
+      expect(tool?.description).toBe(shared?.description);
+    }
   });
 });
 

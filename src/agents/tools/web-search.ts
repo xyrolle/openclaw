@@ -7,7 +7,7 @@ import {
   wrapWebContent,
 } from "../../security/external-content.js";
 import { WebSearchProviderError } from "../../web-search/runtime-error.js";
-import { runWebSearch } from "../../web-search/runtime.js";
+import { resolveSelectedWebSearchToolDefinition, runWebSearch } from "../../web-search/runtime.js";
 import type { AnyAgentTool } from "./common.js";
 import { asToolParamsRecord, jsonResult, textResult } from "./common.js";
 import { normalizeWebSearchOutput, WebSearchOutputSchema } from "./web-search-output.js";
@@ -88,13 +88,27 @@ export function createWebSearchTool(options?: {
     return null;
   }
 
+  const { config: selectionConfig, runtimeMetadata: selectionMetadata } =
+    resolveWebToolRuntimeContext({
+      kind: "search",
+      config: options?.config,
+      lateBindRuntimeConfig: options?.lateBindRuntimeConfig,
+      runtimeMetadata: options?.runtimeWebSearch,
+    });
+  const selected = resolveSelectedWebSearchToolDefinition({
+    config: selectionConfig,
+    agentDir: options?.agentDir,
+    runtimeWebSearch: selectionMetadata,
+  });
+
   return {
     label: "Web Search",
     name: "web_search",
     resultContentSource: "network",
     description:
+      selected?.description ??
       "Search current web; normalized provider results. Supports freshness and date-range filters (freshness, date_after/date_before) and domain filtering (domain_filter).",
-    parameters: WebSearchSchema,
+    parameters: selected?.parameters ?? WebSearchSchema,
     outputSchema: WebSearchOutputSchema,
     execute: async (_toolCallId, args, signal) => {
       // Late binding lets long-lived agents pick up runtime web-search credentials/config without
