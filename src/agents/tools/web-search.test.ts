@@ -2,6 +2,10 @@ import { Value } from "typebox/value";
 import { afterEach, describe, expect, it } from "vitest";
 import { createEmptyPluginRegistry } from "../../plugins/registry-empty.js";
 import { setActivePluginRegistry } from "../../plugins/runtime.js";
+import {
+  clearActiveRuntimeWebToolsMetadata,
+  setActiveRuntimeWebToolsMetadata,
+} from "../../secrets/runtime-web-tools-state.js";
 import { normalizeWebSearchOutput, WebSearchOutputSchema } from "./web-search-output.js";
 import {
   buildUnsupportedSearchFilterResponse,
@@ -28,6 +32,7 @@ describe("web_search tool schema", () => {
 describe("web_search schema of the selected provider", () => {
   afterEach(() => {
     setActivePluginRegistry(createEmptyPluginRegistry());
+    clearActiveRuntimeWebToolsMetadata();
   });
 
   const queryOnlyParameters = {
@@ -36,45 +41,53 @@ describe("web_search schema of the selected provider", () => {
     properties: { query: { type: "string" } },
   };
 
-  function registerQueryOnlyProvider(): void {
+  function registerProviders(...ids: string[]): void {
     const registry = createEmptyPluginRegistry();
-    registry.webSearchProviders.push({
-      pluginId: "query-only-search",
-      source: "test",
-      provider: {
-        id: "query-only",
-        label: "Query-only Search",
-        hint: "Search",
-        envVars: [],
-        placeholder: "",
-        signupUrl: "",
-        credentialPath: "",
-        getCredentialValue: () => undefined,
-        setCredentialValue: () => {},
-        createTool: () => ({
-          description: "Search the web with a query only.",
-          parameters: queryOnlyParameters,
-          execute: async () => ({}),
-        }),
-      },
-    });
+    for (const id of ids) {
+      registry.webSearchProviders.push({
+        pluginId: id,
+        source: "test",
+        provider: {
+          id,
+          label: id,
+          hint: "Search",
+          envVars: [],
+          placeholder: "",
+          signupUrl: "",
+          credentialPath: "",
+          getCredentialValue: () => undefined,
+          setCredentialValue: () => {},
+          createTool: () => ({
+            description: `${id} search`,
+            parameters: queryOnlyParameters,
+            execute: async () => ({ results: [] }),
+          }),
+        },
+      });
+    }
     setActivePluginRegistry(registry);
   }
 
+  const configuredSelection = (provider: string) => ({
+    selectedProvider: provider,
+    providerSource: "configured" as const,
+    diagnostics: [],
+  });
+
   it("offers the explicitly selected provider's parameters and description", () => {
-    registerQueryOnlyProvider();
+    registerProviders("query-only");
 
     const tool = createWebSearchTool({
       config: { tools: { web: { search: { provider: "query-only" } } } },
     });
 
     expect(tool?.parameters).toBe(queryOnlyParameters);
-    expect(tool?.description).toBe("Search the web with a query only.");
+    expect(tool?.description).toBe("query-only search");
   });
 
   it("keeps the shared schema without an explicit selection of a registered provider", () => {
     const shared = createWebSearchTool();
-    registerQueryOnlyProvider();
+    registerProviders("query-only");
 
     for (const tool of [
       createWebSearchTool(),
@@ -83,6 +96,40 @@ describe("web_search schema of the selected provider", () => {
       expect(tool?.parameters).toBe(shared?.parameters);
       expect(tool?.description).toBe(shared?.description);
     }
+  });
+
+  it("runs the provider it advertises when config and runtime metadata disagree", async () => {
+    registerProviders("brave", "perplexity");
+    const tool = createWebSearchTool({
+      config: { tools: { web: { search: { provider: "brave" } } } },
+      runtimeWebSearch: configuredSelection("perplexity"),
+    });
+
+    expect(tool?.description).toBe("perplexity search");
+    await expect(
+      tool?.execute("call-search", { query: "openclaw" }, undefined),
+    ).resolves.toMatchObject({
+      details: { provider: "perplexity" },
+    });
+  });
+
+  it("runs the provider it advertised after the runtime selection changes", async () => {
+    registerProviders("brave", "perplexity");
+    const webTools = (provider: string) => ({
+      search: configuredSelection(provider),
+      fetch: { providerSource: "none" as const, diagnostics: [] },
+      diagnostics: [],
+    });
+    setActiveRuntimeWebToolsMetadata(webTools("brave"));
+    const tool = createWebSearchTool({ lateBindRuntimeConfig: true });
+    setActiveRuntimeWebToolsMetadata(webTools("perplexity"));
+
+    expect(tool?.description).toBe("brave search");
+    await expect(
+      tool?.execute("call-search", { query: "openclaw" }, undefined),
+    ).resolves.toMatchObject({
+      details: { provider: "brave" },
+    });
   });
 });
 

@@ -12,8 +12,7 @@ const mocks = vi.hoisted(() => ({
 
 // mock-isolation: These cases drive execution only; tools keep the shared schema.
 vi.mock("../../web-search/runtime.js", () => ({
-  resolveSelectedWebSearchToolDefinition: vi.fn(() => null),
-  resolveWebSearchProviderId: vi.fn(() => "mock"),
+  resolveSelectedWebSearchTool: vi.fn(() => null),
   runWebSearch: mocks.runWebSearch,
 }));
 

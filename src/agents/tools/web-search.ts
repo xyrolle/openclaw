@@ -7,7 +7,7 @@ import {
   wrapWebContent,
 } from "../../security/external-content.js";
 import { WebSearchProviderError } from "../../web-search/runtime-error.js";
-import { resolveSelectedWebSearchToolDefinition, runWebSearch } from "../../web-search/runtime.js";
+import { resolveSelectedWebSearchTool, runWebSearch } from "../../web-search/runtime.js";
 import type { AnyAgentTool } from "./common.js";
 import { asToolParamsRecord, jsonResult, textResult } from "./common.js";
 import { normalizeWebSearchOutput, WebSearchOutputSchema } from "./web-search-output.js";
@@ -88,17 +88,17 @@ export function createWebSearchTool(options?: {
     return null;
   }
 
-  const { config: selectionConfig, runtimeMetadata: selectionMetadata } =
-    resolveWebToolRuntimeContext({
-      kind: "search",
-      config: options?.config,
-      lateBindRuntimeConfig: options?.lateBindRuntimeConfig,
-      runtimeMetadata: options?.runtimeWebSearch,
-    });
-  const selected = resolveSelectedWebSearchToolDefinition({
-    config: selectionConfig,
+  const selection = resolveWebToolRuntimeContext({
+    kind: "search",
+    config: options?.config,
+    lateBindRuntimeConfig: options?.lateBindRuntimeConfig,
+    runtimeMetadata: options?.runtimeWebSearch,
+  });
+  const selected = resolveSelectedWebSearchTool({
+    config: selection.config,
     agentDir: options?.agentDir,
-    runtimeWebSearch: selectionMetadata,
+    runtimeWebSearch: selection.runtimeMetadata,
+    preferRuntimeProviders: selection.preferRuntimeProviders,
   });
 
   return {
@@ -106,13 +106,13 @@ export function createWebSearchTool(options?: {
     name: "web_search",
     resultContentSource: "network",
     description:
-      selected?.description ??
+      selected?.definition.description ??
       "Search current web; normalized provider results. Supports freshness and date-range filters (freshness, date_after/date_before) and domain filtering (domain_filter).",
-    parameters: selected?.parameters ?? WebSearchSchema,
+    parameters: selected?.definition.parameters ?? WebSearchSchema,
     outputSchema: WebSearchOutputSchema,
     execute: async (_toolCallId, args, signal) => {
       // Late binding lets long-lived agents pick up runtime web-search credentials/config without
-      // rebuilding the tool object.
+      // rebuilding the tool object. A provider-specific schema keeps running on its provider.
       const {
         config,
         preferRuntimeProviders,
@@ -127,11 +127,9 @@ export function createWebSearchTool(options?: {
       if (isWebSearchDisabled(config)) {
         throw new Error("web_search is disabled.");
       }
-      if (providerSelectionId) {
-        assertSecretOwnerAvailable(
-          "capability",
-          runtimeWebSecretOwnerId("search", providerSelectionId),
-        );
+      const providerId = selected?.providerId ?? providerSelectionId;
+      if (providerId) {
+        assertSecretOwnerAvailable("capability", runtimeWebSecretOwnerId("search", providerId));
       }
       const toolArgs = asToolParamsRecord(args);
       const result = await runWebSearch({
@@ -140,6 +138,7 @@ export function createWebSearchTool(options?: {
         sandboxed: options?.sandboxed,
         runtimeWebSearch,
         preferRuntimeProviders,
+        providerId: selected?.providerId,
         args: toolArgs,
         signal,
       }).catch((error: unknown) => {

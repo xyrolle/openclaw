@@ -212,22 +212,30 @@ function resolveWebSearchRequestContext(
   };
 }
 
-function loadSortedWebSearchProviders(
-  params: WebSearchRequestContext & {
-    providerId?: string;
-    preferRuntimeProviders?: boolean;
-  },
-): PluginWebSearchProviderEntry[] {
+/** The provider a request names: an explicit id, then configured runtime metadata, then config. */
+function resolveSelectedWebSearchProviderId(
+  params: WebSearchRequestContext & { providerId?: string; preferRuntimeProviders?: boolean },
+): string | undefined {
   const runtimeProviderId =
     params.preferRuntimeProviders && params.runtimeWebSearch?.providerSource === "configured"
       ? normalizeOptionalLowercaseString(
           params.runtimeWebSearch.selectedProvider ?? params.runtimeWebSearch.providerConfigured,
         )
       : undefined;
-  const providerId =
+  return (
     normalizeOptionalLowercaseString(params.providerId) ??
     runtimeProviderId ??
-    normalizeOptionalLowercaseString(params.search?.provider);
+    normalizeOptionalLowercaseString(params.search?.provider)
+  );
+}
+
+function loadSortedWebSearchProviders(
+  params: WebSearchRequestContext & {
+    providerId?: string;
+    preferRuntimeProviders?: boolean;
+  },
+): PluginWebSearchProviderEntry[] {
+  const providerId = resolveSelectedWebSearchProviderId(params);
   const pluginId = providerId
     ? resolveManifestContractOwnerPluginId({
         config: params.config,
@@ -492,14 +500,15 @@ export async function hasUsableWebSearchProvider(
   return (await resolveWebSearchCandidates(options)).length > 0;
 }
 
-type WebSearchSelectionParams = {
+function hasExplicitWebSearchSelection(params: {
   search?: WebSearchConfig;
   runtimeWebSearch?: RuntimeWebSearchMetadata;
+  providerId?: string;
   providers?: PluginWebSearchProviderEntry[];
-};
-
-/** The configured provider id when it names one of `providers`. */
-function resolveExplicitWebSearchProviderId(params: WebSearchSelectionParams): string | undefined {
+}): boolean {
+  if (params.providerId?.trim()) {
+    return true;
+  }
   const availableProviderIds = new Set(
     (params.providers ?? []).map((provider) => normalizeLowercaseStringOrEmpty(provider.id)),
   );
@@ -508,7 +517,7 @@ function resolveExplicitWebSearchProviderId(params: WebSearchSelectionParams): s
       ? normalizeLowercaseStringOrEmpty(params.search.provider)
       : "";
   if (configuredProviderId && availableProviderIds.has(configuredProviderId)) {
-    return configuredProviderId;
+    return true;
   }
   const runtimeConfiguredId = normalizeOptionalLowercaseString(
     params.runtimeWebSearch?.selectedProvider ?? params.runtimeWebSearch?.providerConfigured,
@@ -518,41 +527,36 @@ function resolveExplicitWebSearchProviderId(params: WebSearchSelectionParams): s
     runtimeConfiguredId &&
     availableProviderIds.has(runtimeConfiguredId)
   ) {
-    return runtimeConfiguredId;
+    return true;
   }
-  return undefined;
-}
-
-function hasExplicitWebSearchSelection(
-  params: WebSearchSelectionParams & { providerId?: string },
-): boolean {
-  return (
-    Boolean(params.providerId?.trim()) || resolveExplicitWebSearchProviderId(params) !== undefined
-  );
+  return false;
 }
 
 /**
- * The explicitly selected provider's own tool definition, which is what that
- * selection executes (it never falls back). Reads only the active registry, so
- * building tools loads no plugin; null keeps the shared schema.
+ * The selected provider and its own tool definition. Reads only the active
+ * registry, so building tools loads no plugin. The tool executes on the
+ * returned provider, so the schema it advertises is the one that runs; null
+ * keeps the shared schema.
  */
-export function resolveSelectedWebSearchToolDefinition(
-  params: Pick<ResolveWebSearchDefinitionParams, "config" | "agentDir" | "runtimeWebSearch">,
-): WebSearchProviderToolDefinition | null {
-  const { config, search, runtimeWebSearch } = resolveWebSearchRequestContext(params);
-  const providers = resolveActiveWebSearchProviders();
-  const providerId = resolveExplicitWebSearchProviderId({ search, runtimeWebSearch, providers });
-  const provider = providers.find(
-    (entry) => normalizeLowercaseStringOrEmpty(entry.id) === providerId,
-  );
-  return (
-    provider?.createTool({
-      config,
-      agentDir: params.agentDir,
-      searchConfig: search,
-      runtimeMetadata: runtimeWebSearch,
-    }) ?? null
-  );
+export function resolveSelectedWebSearchTool(
+  params: Pick<
+    ResolveWebSearchDefinitionParams,
+    "config" | "agentDir" | "runtimeWebSearch" | "preferRuntimeProviders"
+  >,
+): { providerId: string; definition: WebSearchProviderToolDefinition } | null {
+  const context = resolveWebSearchRequestContext(params);
+  const providerId = resolveSelectedWebSearchProviderId({
+    ...context,
+    preferRuntimeProviders: params.preferRuntimeProviders,
+  });
+  const provider = resolveActiveWebSearchProviders().find((entry) => entry.id === providerId);
+  const definition = provider?.createTool({
+    config: context.config,
+    agentDir: params.agentDir,
+    searchConfig: context.search,
+    runtimeMetadata: context.runtimeWebSearch,
+  });
+  return provider && definition ? { providerId: provider.id, definition } : null;
 }
 
 /** Executes web_search with fallback when selection was not explicit. */
