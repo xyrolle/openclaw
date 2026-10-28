@@ -1,7 +1,10 @@
 import { Value } from "typebox/value";
 import { afterEach, describe, expect, it } from "vitest";
 import { createEmptyPluginRegistry } from "../../plugins/registry-empty.js";
+import type { PluginRegistry } from "../../plugins/registry-types.js";
 import { setActivePluginRegistry } from "../../plugins/runtime.js";
+import { withPluginRuntimeRegistryScope } from "../../plugins/runtime/gateway-request-scope.js";
+import { withPluginRuntimeGenerationRegistryScope } from "../../plugins/runtime/generation-state.js";
 import {
   clearActiveRuntimeWebToolsMetadata,
   setActiveRuntimeWebToolsMetadata,
@@ -30,9 +33,11 @@ describe("web_search tool schema", () => {
 });
 
 describe("web_search schema of the selected provider", () => {
+  const executed: string[] = [];
   afterEach(() => {
     setActivePluginRegistry(createEmptyPluginRegistry());
     clearActiveRuntimeWebToolsMetadata();
+    executed.length = 0;
   });
 
   const queryOnlyParameters = {
@@ -41,9 +46,10 @@ describe("web_search schema of the selected provider", () => {
     properties: { query: { type: "string" } },
   };
 
-  function registerProviders(...ids: string[]): void {
+  function providerRegistry(ids: string[], label = ""): PluginRegistry {
     const registry = createEmptyPluginRegistry();
     for (const id of ids) {
+      const description = `${label}${id} search`;
       registry.webSearchProviders.push({
         pluginId: id,
         source: "test",
@@ -58,14 +64,21 @@ describe("web_search schema of the selected provider", () => {
           getCredentialValue: () => undefined,
           setCredentialValue: () => {},
           createTool: () => ({
-            description: `${id} search`,
+            description,
             parameters: queryOnlyParameters,
-            execute: async () => ({ results: [] }),
+            execute: async () => {
+              executed.push(description);
+              return { results: [] };
+            },
           }),
         },
       });
     }
-    setActivePluginRegistry(registry);
+    return registry;
+  }
+
+  function registerProviders(...ids: string[]): void {
+    setActivePluginRegistry(providerRegistry(ids));
   }
 
   const configuredSelection = (provider: string) => ({
@@ -75,14 +88,14 @@ describe("web_search schema of the selected provider", () => {
   });
 
   it("offers the explicitly selected provider's parameters and description", () => {
-    registerProviders("query-only");
+    registerProviders("brave");
 
     const tool = createWebSearchTool({
-      config: { tools: { web: { search: { provider: "query-only" } } } },
+      config: { tools: { web: { search: { provider: "brave" } } } },
     });
 
     expect(tool?.parameters).toBe(queryOnlyParameters);
-    expect(tool?.description).toBe("query-only search");
+    expect(tool?.description).toBe("brave search");
   });
 
   it("keeps the shared schema without an explicit selection of a registered provider", () => {
@@ -131,6 +144,29 @@ describe("web_search schema of the selected provider", () => {
       details: { provider: "brave" },
     });
   });
+
+  const registryScopes: Array<
+    [string, (registry: PluginRegistry, run: () => Promise<void>) => Promise<void>]
+  > = [
+    ["gateway request", withPluginRuntimeRegistryScope],
+    ["generation", withPluginRuntimeGenerationRegistryScope],
+  ];
+
+  it.each(registryScopes)(
+    "advertises and runs the %s registry's provider over the global one",
+    async (_scope, withRegistry) => {
+      setActivePluginRegistry(providerRegistry(["brave"], "global "));
+
+      await withRegistry(providerRegistry(["brave"], "scoped "), async () => {
+        const tool = createWebSearchTool({
+          config: { tools: { web: { search: { provider: "brave" } } } },
+        });
+        expect(tool?.description).toBe("scoped brave search");
+        await tool?.execute("call-search", { query: "openclaw" }, undefined);
+      });
+      expect(executed).toEqual(["scoped brave search"]);
+    },
+  );
 });
 
 const preWrappedText = (text: string) =>

@@ -1,4 +1,3 @@
-import { getActivePluginRegistry } from "./runtime.js";
 import type { PluginWebSearchProviderEntry } from "./types.js";
 import {
   resolveBundledWebSearchProvidersFromPublicArtifacts,
@@ -65,10 +64,4 @@ export function resolveRuntimeWebSearchProviders(
     ...providerResolution,
     resolveBundledRuntimeArtifactProviders: resolveLazyBundledWebSearchProviders,
   });
-}
-
-/** Providers already in the active plugin registry; never loads a plugin. */
-export function resolveActiveWebSearchProviders(): PluginWebSearchProviderEntry[] {
-  const registry = getActivePluginRegistry();
-  return registry ? providerResolution.mapRegistryProviders({ registry }) : [];
 }

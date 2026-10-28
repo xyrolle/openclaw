@@ -22,7 +22,6 @@ import type {
   WebSearchProviderToolDefinition,
 } from "../plugins/types.js";
 import {
-  resolveActiveWebSearchProviders,
   resolvePluginWebSearchProviders,
   resolveRuntimeWebSearchProviders,
 } from "../plugins/web-search-providers.runtime.js";
@@ -233,6 +232,7 @@ function loadSortedWebSearchProviders(
   params: WebSearchRequestContext & {
     providerId?: string;
     preferRuntimeProviders?: boolean;
+    registryScope?: "loaded";
   },
 ): PluginWebSearchProviderEntry[] {
   const providerId = resolveSelectedWebSearchProviderId(params);
@@ -249,6 +249,7 @@ function loadSortedWebSearchProviders(
   return sortPluginEntriesForAutoDetect(
     resolveProviders({
       config: params.config,
+      registryScope: params.registryScope,
       ...(pluginId ? { onlyPluginIds: [pluginId] } : {}),
     }),
   );
@@ -533,10 +534,10 @@ function hasExplicitWebSearchSelection(params: {
 }
 
 /**
- * The selected provider and its own tool definition. Reads only the active
- * registry, so building tools loads no plugin. The tool executes on the
- * returned provider, so the schema it advertises is the one that runs; null
- * keeps the shared schema.
+ * The selected provider and its own tool definition, resolved as execution
+ * resolves it but only from an already-loaded registry, so building tools
+ * loads no plugin. The tool executes on the returned provider; null keeps the
+ * shared schema.
  */
 export function resolveSelectedWebSearchTool(
   params: Pick<
@@ -545,11 +546,13 @@ export function resolveSelectedWebSearchTool(
   >,
 ): { providerId: string; definition: WebSearchProviderToolDefinition } | null {
   const context = resolveWebSearchRequestContext(params);
-  const providerId = resolveSelectedWebSearchProviderId({
-    ...context,
-    preferRuntimeProviders: params.preferRuntimeProviders,
-  });
-  const provider = resolveActiveWebSearchProviders().find((entry) => entry.id === providerId);
+  const selection = { ...context, preferRuntimeProviders: params.preferRuntimeProviders };
+  const providerId = resolveSelectedWebSearchProviderId(selection);
+  const provider = providerId
+    ? loadSortedWebSearchProviders({ ...selection, registryScope: "loaded" }).find(
+        (entry) => entry.id === providerId,
+      )
+    : undefined;
   const definition = provider?.createTool({
     config: context.config,
     agentDir: params.agentDir,

@@ -29,6 +29,8 @@ export type ResolvePluginWebProvidersParams = {
   origin?: PluginManifestRecord["origin"];
   sandboxed?: boolean;
   manifestRecords?: readonly PluginManifestRecord[];
+  /** Only a registry already loaded for this scope; never loads a plugin. */
+  registryScope?: "loaded";
 };
 
 export type ResolveRuntimeWebProvidersParams = Omit<
@@ -243,7 +245,7 @@ export function resolvePluginWebProviders<TEntry>(
       return providers;
     }
   }
-  if (isPluginRegistryLoadInFlight(loadOptions)) {
+  if (params.registryScope === "loaded" || isPluginRegistryLoadInFlight(loadOptions)) {
     return [];
   }
   if (hasExplicitEmptyScope) {
