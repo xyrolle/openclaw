@@ -29,7 +29,7 @@ export type ResolvePluginWebProvidersParams = {
   origin?: PluginManifestRecord["origin"];
   sandboxed?: boolean;
   manifestRecords?: readonly PluginManifestRecord[];
-  /** Only a registry already loaded for this scope; never loads a plugin. */
+  /** Runtime resolution reads only a registry already loaded for this scope and never loads a plugin; setup mode ignores it. */
   registryScope?: "loaded";
 };
 

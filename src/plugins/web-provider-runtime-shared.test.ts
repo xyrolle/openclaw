@@ -291,6 +291,23 @@ describe("web-provider-runtime-shared", () => {
     });
   });
 
+  it("resolves nothing without a loaded registry when registryScope is loaded", () => {
+    const resolveBundledRuntimeArtifactProviders = vi.fn(() => ["provider"]);
+
+    const providers = resolvePluginWebProviders(
+      { config: {}, registryScope: "loaded" },
+      resolution({
+        resolveCandidatePluginIds: () => ["external-provider"],
+        mapRegistryProviders: vi.fn(() => ["provider"]),
+        resolveBundledRuntimeArtifactProviders,
+      }),
+    );
+
+    expect(providers).toEqual([]);
+    expect(resolveBundledRuntimeArtifactProviders).not.toHaveBeenCalled();
+    expect(mocks.loadOpenClawPlugins).not.toHaveBeenCalled();
+  });
+
   it("falls back to a scoped provider load when the active runtime registry has no web providers", () => {
     const activeRegistry = { source: "active" };
     const fallbackRegistry = { source: "fallback" };
